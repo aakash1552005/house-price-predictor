@@ -1,17 +1,43 @@
 import streamlit as st
 import joblib
 import numpy as np
+import os
+from sklearn.datasets import fetch_california_housing
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
-# Load the saved model and feature names
-model = joblib.load("rf_model.pkl")
-feature_names = joblib.load("feature_names.pkl")
+# ─── Load or Train Model ───────────────────────────────────────
+@st.cache_resource
+def load_model():
+    if os.path.exists("rf_model.pkl"):
+        model = joblib.load("rf_model.pkl")
+        feature_names = joblib.load("feature_names.pkl")
+    else:
+        with st.spinner("Training model for first time... (30 seconds)"):
+            housing = fetch_california_housing()
+            X = housing.data
+            y = housing.target
+            feature_names = list(housing.feature_names)
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            model = RandomForestRegressor(
+                n_estimators=100,
+                random_state=42,
+                n_jobs=-1
+            )
+            model.fit(X_train, y_train)
+            joblib.dump(model, "rf_model.pkl")
+            joblib.dump(feature_names, "feature_names.pkl")
+    return model, feature_names
 
-# App title and description
+model, feature_names = load_model()
+
+# ─── App UI ────────────────────────────────────────────────────
 st.title("🏠 House Price Predictor")
 st.write("Enter the details below to predict the house price!")
 st.write("---")
 
-# Create two columns for a cleaner layout
 col1, col2 = st.columns(2)
 
 with col1:
@@ -78,25 +104,14 @@ with col2:
 
 st.write("---")
 
-# Predict button
 if st.button("🔮 Predict House Price", use_container_width=True):
-
-    # Prepare input as numpy array
     input_data = np.array([[
         MedInc, HouseAge, AveRooms, AveBedrms,
         Population, AveOccup, Latitude, Longitude
     ]])
-
-    # Make prediction
     prediction = model.predict(input_data)[0]
-
-    # Convert to dollars (multiply by 100,000)
     price_dollars = prediction * 100000
-
-    # Show result
     st.success(f"🏠 Predicted House Price: ${price_dollars:,.0f}")
-
-    # Show input summary
     st.write("---")
     st.subheader("📋 Your Input Summary")
     col3, col4 = st.columns(2)
@@ -110,3 +125,11 @@ if st.button("🔮 Predict House Price", use_container_width=True):
         st.metric("Avg Occupants", f"{AveOccup}")
         st.metric("Latitude", f"{Latitude}")
         st.metric("Longitude", f"{Longitude}")
+```
+
+**Key new addition — `@st.cache_resource`:**
+```
+@st.cache_resource
+→ trains model ONCE and caches it
+→ next time user opens app → loads instantly
+→ no retraining every time! ✅
