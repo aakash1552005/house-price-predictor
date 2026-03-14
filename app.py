@@ -6,7 +6,6 @@ from sklearn.datasets import fetch_california_housing
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
-# ─── Load or Train Model ───────────────────────────────────────
 @st.cache_resource
 def load_model():
     if os.path.exists("rf_model.pkl"):
@@ -33,15 +32,14 @@ def load_model():
 
 model, feature_names = load_model()
 
-# ─── App UI ────────────────────────────────────────────────────
-st.title("🏠 House Price Predictor")
+st.title("House Price Predictor")
 st.write("Enter the details below to predict the house price!")
 st.write("---")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📊 Area Details")
+    st.subheader("Area Details")
     MedInc = st.slider(
         "Median Income (in $10,000s)",
         min_value=0.5,
@@ -72,7 +70,7 @@ with col1:
     )
 
 with col2:
-    st.subheader("📍 Location Details")
+    st.subheader("Location Details")
     Population = st.slider(
         "Population",
         min_value=3,
@@ -104,16 +102,16 @@ with col2:
 
 st.write("---")
 
-if st.button("🔮 Predict House Price", use_container_width=True):
+if st.button("Predict House Price", use_container_width=True):
     input_data = np.array([[
         MedInc, HouseAge, AveRooms, AveBedrms,
         Population, AveOccup, Latitude, Longitude
     ]])
     prediction = model.predict(input_data)[0]
     price_dollars = prediction * 100000
-    st.success(f"🏠 Predicted House Price: ${price_dollars:,.0f}")
+    st.success(f"Predicted House Price: ${price_dollars:,.0f}")
     st.write("---")
-    st.subheader("📋 Your Input Summary")
+    st.subheader("Your Input Summary")
     col3, col4 = st.columns(2)
     with col3:
         st.metric("Median Income", f"${MedInc*10000:,.0f}/yr")
@@ -125,11 +123,3 @@ if st.button("🔮 Predict House Price", use_container_width=True):
         st.metric("Avg Occupants", f"{AveOccup}")
         st.metric("Latitude", f"{Latitude}")
         st.metric("Longitude", f"{Longitude}")
-```
-
-**Key new addition — `@st.cache_resource`:**
-```
-@st.cache_resource
-→ trains model ONCE and caches it
-→ next time user opens app → loads instantly
-→ no retraining every time! ✅
